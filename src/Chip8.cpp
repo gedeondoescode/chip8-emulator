@@ -4,7 +4,7 @@
 #include <fstream>
 #include <iostream>
 
-void Chip8::init() {
+Chip8::Chip8() {
   opcode = 0;
   I = 0;
 
@@ -50,14 +50,8 @@ void Chip8::loadRom(const char *filename) {
 }
 
 void Chip8::cycle() {
-  // printf("%s", opcode);
   // Fetch the current instruction
-  // opcode = (memory[pc] << 8) | memory[pc + 1];
-  if (pc >= 0 && pc < 4095) {
-    opcode = memory[pc] << 8 | memory[pc + 1];
-  } else {
-    printf("Error: pc out of bounds (pc = %d)\n", pc);
-  }
+  opcode = (memory[pc] << 8) | memory[pc + 1];
 
   // 4-bit identifiers
   uint8_t X = (opcode & 0x0F00) >> 8;
@@ -95,6 +89,22 @@ void Chip8::cycle() {
       pc = opcode & 0x0FFF;
       break;
 
+    case 0x2000:
+      printf("TODO! Unimplemented: 0x%X\n", opcode);
+      break;
+
+    case 0x3000:
+      printf("TODO! Unimplemented: 0x%X\n", opcode);
+      break;
+
+    case 0x4000:
+      printf("TODO! Unimplemented: 0x%X\n", opcode);
+      break;
+
+    case 0x5000:
+      printf("TODO! Unimplemented: 0x%X\n", opcode);
+      break;
+
     case 0x6000:  // LD: Sets VX = kk
       V[X] = opcode & 0x00FF;
       break;
@@ -103,13 +113,37 @@ void Chip8::cycle() {
       V[X] += opcode & 0x00FF;
       break;
 
+    case 0x8000:
+      printf("TODO! Unimplemented: 0x%X\n", opcode);
+      break;
+
+    case 0x9000:
+      printf("TODO! Unimplemented: 0x%X\n", opcode);
+      break;
+
     case 0xA000:  // LD: Set I = nnn
       I = opcode & 0x0FFF;
+      break;
+
+    case 0xB000:
+      printf("TODO! Unimplemented: 0x%X\n", opcode);
+      break;
+
+    case 0xC000:
+      printf("TODO! Unimplemented: 0x%X\n", opcode);
       break;
 
     case 0xD000:
       draw_sprite(X, Y, opcode & 0x000F);
       drawFlag;
+      break;
+
+    case 0xE000:
+      printf("TODO! Unimplemented: 0x%X\n", opcode);
+      break;
+
+    case 0xF000:
+      printf("TODO! Unimplemented: 0x%X\n", opcode);
       break;
 
     default:
@@ -119,8 +153,8 @@ void Chip8::cycle() {
 };
 
 void Chip8::draw_sprite(uint8_t X, uint8_t Y, uint8_t height) {
-  uint8_t x = V[X] % 64;
-  uint8_t y = V[Y] % 32;
+  uint8_t x = V[X] % SCREEN_WIDTH;
+  uint8_t y = V[Y] % SCREEN_HEIGHT;
   uint8_t pixel;
 
   V[0xF] = 0;  // Reset V[F] register
@@ -130,8 +164,8 @@ void Chip8::draw_sprite(uint8_t X, uint8_t Y, uint8_t height) {
 
     for (int x_col = 0; x_col < 8; x_col++) {
       if ((pixel & (0x80 >> x_col)) != 0) {
-        int wrapped_x = (x + x_col) % 64;   // Wrap horizontally
-        int wrapped_y = (y + y_line) % 32;  // Wrap vertically
+        int wrapped_x = (x + x_col) % SCREEN_WIDTH;    // Wrap horizontally
+        int wrapped_y = (y + y_line) % SCREEN_HEIGHT;  // Wrap vertically
 
         int index = wrapped_x + (wrapped_y * 64);
 

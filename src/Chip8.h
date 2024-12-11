@@ -4,12 +4,12 @@
 
 static const unsigned int SCREEN_WIDTH = 64;
 static const unsigned int SCREEN_HEIGHT = 32;
-static const unsigned int WIN_WIDTH = 960;
-static const unsigned int WIN_HEIGHT = 540;
+static const unsigned int WIN_WIDTH = SCREEN_WIDTH * 15;
+static const unsigned int WIN_HEIGHT = SCREEN_HEIGHT * 15;
 
 class Chip8 {
  public:
-  // Chip8();
+  Chip8();
   uint8_t font[80] = {
       0xF0, 0x90, 0x90, 0x90, 0xF0,  // 0
       0x20, 0x60, 0x20, 0x20, 0x70,  // 1
@@ -32,7 +32,6 @@ class Chip8 {
   uint8_t display[SCREEN_WIDTH * SCREEN_HEIGHT];
   bool drawFlag;
 
-  void init();
   void loadRom(const char *filename);
   void cycle();
   void draw_sprite(uint8_t X, uint8_t Y, uint8_t height);

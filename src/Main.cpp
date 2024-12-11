@@ -44,6 +44,7 @@ int main(int argc, char **argv) {
       while (SDL_PollEvent(&event)) {
         if (event.type == SDL_QUIT) {
           running = false;
+          std::cout << "Exiting now..." << std::endl;
         }
       }
 
@@ -65,20 +66,19 @@ void draw_pixels() {
   SDL_PixelFormat *myPixel = dst->format;
   SDL_Rect rect;
 
-  int scale = WIN_WIDTH / SCREEN_WIDTH;
-
   for (int x = 0; x < SCREEN_WIDTH; x++) {
     for (int y = 0; y < SCREEN_HEIGHT; y++) {
-      rect.x = x * scale;
-      rect.y = y * scale;
-      rect.w = scale;
-      rect.h = scale;
+      rect.x = x * 15;
+      rect.y = y * 15;
+      rect.w = 15;
+      rect.h = 15;
 
-      if (chip8.display[x + (y * 64)] == 0) {
-        SDL_FillRect(dst, &rect, SDL_MapRGB(myPixel, 0, 0, 0));
+      if (chip8.display[x + (y * 64)] == 1) {
+        SDL_FillRect(dst, &rect, SDL_MapRGB(myPixel, 255, 204, 1));  // Jonquil
 
       } else {
-        SDL_FillRect(dst, &rect, SDL_MapRGB(myPixel, 255, 255, 255));
+        SDL_FillRect(dst, &rect,
+                     SDL_MapRGB(myPixel, 153, 103, 1));  // Golden Brown
       }
     }
   }
