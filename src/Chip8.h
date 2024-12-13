@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <random>
 
 static const unsigned int SCREEN_WIDTH = 64;
 static const unsigned int SCREEN_HEIGHT = 32;
@@ -32,7 +33,7 @@ class Chip8 {
   uint8_t display[SCREEN_WIDTH * SCREEN_HEIGHT];
   bool drawFlag;
 
-  void loadRom(const char *filename);
+  void load_rom(const char *filename);
   void cycle();
   void draw_sprite(uint8_t X, uint8_t Y, uint8_t height);
 
@@ -40,10 +41,14 @@ class Chip8 {
   uint8_t memory[4096];  // RAM: 0x000 -> 0x1FF
   uint16_t stack[16];    // Limited to 16 to prevent overflow
   uint16_t pc;           // Program Counter
+  uint8_t sp;            // Stack Pointer
   uint16_t I;            // Index register
   uint8_t V[16];         // variable registers: V0 -> VF
-  uint16_t opcode;
+  uint16_t opcode;       // Instruction
 
   uint8_t delay_timer;
   uint8_t sound_timer;
+
+  std::default_random_engine rand_eng;
+  std::uniform_int_distribution<uint8_t> rand_byte;
 };

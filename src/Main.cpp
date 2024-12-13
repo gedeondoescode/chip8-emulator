@@ -14,7 +14,7 @@ void draw_pixels();
 
 int main(int argc, char **argv) {
   if (argc != 2) {
-    std::cout << "Usage: <ROM> " << std::endl;
+    std::cout << "Usage: ./Chip8 <ROM> " << std::endl;
     return 1;
   }
   const char *romName = argv[1];
@@ -34,7 +34,7 @@ int main(int argc, char **argv) {
                             SDL_WINDOW_ALLOW_HIGHDPI);
   dst = SDL_GetWindowSurface(window);
 
-  chip8.loadRom(romName);
+  chip8.load_rom(romName);
 
   while (running) {
     chip8.cycle();

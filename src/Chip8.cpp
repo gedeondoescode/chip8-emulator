@@ -1,37 +1,49 @@
 #include "Chip8.h"
 
 #include <algorithm>
+#include <chrono>
 #include <fstream>
 #include <iostream>
+#include <random>
 
-Chip8::Chip8() {
+auto rand_seed = std::chrono::system_clock::now().time_since_epoch().count();
+
+Chip8::Chip8() : rand_eng(rand_seed) {
   opcode = 0;
+  sp = 0;
   I = 0;
 
   pc = 0x200;
 
+  rand_byte = std::uniform_int_distribution<uint8_t>(0, 255U);
+
+  // Clear sprites/display
   for (int i = 0; i < sizeof(display); i++) {
     display[i] = 0;
   };
 
+  // Clear stack
   for (int i = 0; i < sizeof(stack); i++) {
     stack[i] = 0;
   };
 
-  for (int i = 0; i < sizeof(V); i++) {
+  // Clear registers
+  for (int i = 0; i < 16; i++) {
     V[i] = 0;
   };
 
+  // Clear memory
   for (int i = 0; i < sizeof(memory); i++) {
     memory[i] = 0;
   };
 
+  // Load font into memory
   for (int i = 0; i < 80; i++) {
     memory[i] = font[i];
   }
 }
 
-void Chip8::loadRom(const char *filename) {
+void Chip8::load_rom(const char *filename) {
   std::ifstream file(filename, std::ios::binary | std::ios::ate);
 
   if (file.is_open()) {
@@ -57,6 +69,10 @@ void Chip8::cycle() {
   uint8_t X = (opcode & 0x0F00) >> 8;
   uint8_t Y = (opcode & 0x00F0) >> 4;
 
+  // Bit format
+  uint16_t address = opcode & 0x0FFF;
+  uint8_t byte = opcode & 0x00FF;
+
   // Immediately increment the PC
   pc += 2;
 
@@ -65,85 +81,188 @@ void Chip8::cycle() {
     case 0x0000:
 
       switch (opcode & 0x000F) {
-        case 0x0000:
-          // CLS: Clears the screen
+        case 0x0000:  // CLS: Clears the screen
           for (int i = 0; i < sizeof(display); i++) {
             display[i] = 0;
           };
           drawFlag = true;
           break;
 
-        case 0x000E:
-          // RET: return from subroutine
-          std::cout << "TODO: unimplemented!" << std::endl;
+        case 0x000E:  // RET: return from subroutine
+          pc = stack[--sp];
           break;
 
-        // Handle unknown instructions temporarily
-        default:
+        default:  // Handle unknown instructions
           printf("Opcode instruction not recognized: 0x%X\n", opcode);
           break;
       }
       break;
 
-    case 0x1000:  //  JP: Jump to address location nnn
-      pc = opcode & 0x0FFF;
+    case 0x1000:  //  JP: Jump to address location FFF
+      pc = address;
       break;
 
-    case 0x2000:
-      printf("TODO! Unimplemented: 0x%X\n", opcode);
+    case 0x2000:  // CALL: call subroutine at address FFF
+      stack[sp++] = pc;
+      pc = address;
       break;
 
-    case 0x3000:
-      printf("TODO! Unimplemented: 0x%X\n", opcode);
+    case 0x3000:  // SE: skip if V[X] == byte
+      if (V[X] == byte) {
+        pc += 2;
+      }
       break;
 
-    case 0x4000:
-      printf("TODO! Unimplemented: 0x%X\n", opcode);
+    case 0x4000:  // SNE: skip if V[X] != byte
+      if (V[X] != byte) {
+        pc += 2;
+      }
       break;
 
-    case 0x5000:
-      printf("TODO! Unimplemented: 0x%X\n", opcode);
+    case 0x5000:  // SE: skip if VX == VY
+      if (V[X] == V[Y]) {
+        pc += 2;
+      }
       break;
 
     case 0x6000:  // LD: Sets VX = kk
-      V[X] = opcode & 0x00FF;
+      V[X] = byte;
       break;
 
-    case 0x7000:  // ADD: Set Vx = Vx + kk
-      V[X] += opcode & 0x00FF;
+    case 0x7000:  // ADD: Set Vx = VY + kk
+      V[X] += byte;
       break;
 
-    case 0x8000:
-      printf("TODO! Unimplemented: 0x%X\n", opcode);
+    case 0x8000:  // Arithmetic Logic
+      switch (opcode & 0x000F) {
+        case 0x0:  // LD: Set VX = VY (0x8XY0)
+          V[X] = V[Y];
+          break;
+
+        case 0x1:  // OR: Set VX = VX OR VY (0x8XY1)
+          V[X] |= V[Y];
+          break;
+
+        case 0x2:  // AND: Set VX = VX AND VY (0x8XY2)
+          V[X] = V[X] & V[Y];
+          break;
+
+        case 0x3:  // XOR: Set VX = VX XOR VY (0x8XY3)
+          V[X] = V[X] ^ V[Y];
+          break;
+
+        case 0x4:  // ADD: Set VX = VX + VY and set VF = carry (0x8XY4)
+          if ((V[X] + V[Y]) > 255) {
+            V[0xF] = 1;
+          } else {
+            V[0xF] = 0;
+          }
+          V[X] = (V[Y] + V[X]) & 0xFF;
+          break;
+
+        case 0x5:
+          if (V[X] > V[Y]) {
+            V[0xF] = 1;  // set to NOT borrow
+          } else {
+            V[0xF] = 0;
+          }
+
+          V[X] -= V[Y];
+          break;
+
+        case 0x6:
+          V[0xF] = V[X] & 0x1;
+          V[X] = V[X] >> 1;
+
+          break;
+
+        case 0x7:
+          if (V[Y] > V[X]) {
+            V[0xF] = 1;  // set to NOT borrow
+          } else {
+            V[0xF] = 0;
+          }
+
+          V[X] = V[Y] - V[X];
+          break;
+
+        case 0xE:
+          V[0xF] = (V[X] & 0x80u) >> 7u;
+          V[X] <<= 1;
+
+          break;
+      }
       break;
 
-    case 0x9000:
-      printf("TODO! Unimplemented: 0x%X\n", opcode);
+    case 0x9000:  // SNE: skip if V[X] != v[Y]
+      if (V[X] != V[Y]) {
+        pc += 2;
+      }
       break;
 
     case 0xA000:  // LD: Set I = nnn
-      I = opcode & 0x0FFF;
+      I = address;
       break;
 
     case 0xB000:
-      printf("TODO! Unimplemented: 0x%X\n", opcode);
+      pc = address + V[0x0];
       break;
 
     case 0xC000:
-      printf("TODO! Unimplemented: 0x%X\n", opcode);
+      V[X] = rand_byte(rand_eng) & byte;
       break;
 
     case 0xD000:
       draw_sprite(X, Y, opcode & 0x000F);
-      drawFlag;
+      drawFlag = true;
       break;
 
     case 0xE000:
-      printf("TODO! Unimplemented: 0x%X\n", opcode);
+      switch (opcode & 0x00FF) {
+        case 0x9E:
+          // TODO
+          printf("TODO! Unimplemented: 0x%X\n", opcode);
+          break;
+        case 0x1A:
+          // TODO
+          printf("TODO! Unimplemented: 0x%X\n", opcode);
+          break;
+      }
       break;
 
     case 0xF000:
-      printf("TODO! Unimplemented: 0x%X\n", opcode);
+      switch (opcode & 0x00FF) {
+        case 0x1E:
+          I += V[X];
+          break;
+
+        case 0x33:
+          // Ones
+          memory[I + 2] = V[X] % 10;
+          V[X] /= 10;
+
+          // Tens
+          memory[I + 1] = V[X] % 10;
+          V[X] /= 10;
+
+          // Hundreds
+          memory[I] = V[X] % 10;
+
+          break;
+
+        // LD: Store registers V0 through Vx in memory starting at location I
+        case 0x55:
+          for (int i = 0; i <= X; i++) {
+            memory[I + i] = V[i];
+          }
+          break;
+
+        case 0x65:
+          for (int i = 0; i <= X; i++) {
+            V[i] = memory[I + i];
+          }
+          break;
+      }
       break;
 
     default:
@@ -170,7 +289,7 @@ void Chip8::draw_sprite(uint8_t X, uint8_t Y, uint8_t height) {
         int index = wrapped_x + (wrapped_y * 64);
 
         if (display[index] == 1) {
-          V[0xF] = 1;
+          V[0xF] = 1;  // Enable Collision
         }
         display[index] ^= 1;
       }

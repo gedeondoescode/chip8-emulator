@@ -78,6 +78,7 @@
     "__config": "cpp",
     "filesystem": "cpp",
     "unordered_set": "cpp",
-    "version": "cpp"
+    "version": "cpp",
+    "fstream": "cpp"
   }
 }
