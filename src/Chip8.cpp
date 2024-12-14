@@ -152,8 +152,10 @@ void Chip8::cycle() {
           break;
 
         case 0x4:  // ADD: Set VX = VX + VY and set VF = carry (0x8XY4)
-          if ((V[X] + V[Y]) > 255) {
-            V[0xF] = 1;
+          V[X] += V[Y];
+
+          if (V[X] >= 256u) {
+            V[0xF] = 1;  // carry flag
           } else {
             V[0xF] = 0;
           }
@@ -187,9 +189,12 @@ void Chip8::cycle() {
           break;
 
         case 0xE:
-          V[0xF] = (V[X] & 0x80u) >> 7u;
+          if (V[X] >> 7) {
+            V[0xF] = 1;
+          } else {
+            V[0xF] = 0;
+          }
           V[X] <<= 1;
-
           break;
       }
       break;
