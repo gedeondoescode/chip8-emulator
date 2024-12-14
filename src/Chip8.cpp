@@ -177,13 +177,13 @@ void Chip8::cycle() {
           break;
 
         case 0x7:
-          if (V[Y] > V[X]) {
+          V[X] = V[Y] - V[X];
+
+          if (V[Y] >= V[X]) {
             V[0xF] = 1;  // set to NOT borrow
           } else {
             V[0xF] = 0;
           }
-
-          V[X] = V[Y] - V[X];
           break;
 
         case 0xE:
