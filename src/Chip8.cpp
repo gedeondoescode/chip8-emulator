@@ -173,8 +173,9 @@ void Chip8::cycle() {
           break;
 
         case 0x6:
-          V[0xF] = V[X] & 0x1;
+          msb = V[X] & 1;
           V[X] = V[X] >> 1;
+          V[0xF] = msb;
 
           break;
 
@@ -189,12 +190,11 @@ void Chip8::cycle() {
           break;
 
         case 0xE:
-          if (V[X] >> 7) {
-            V[0xF] = 1;
-          } else {
-            V[0xF] = 0;
-          }
-          V[X] <<= 1;
+          msb = V[X] >> 7;
+
+          V[X] = V[X] << 1;
+          V[0xF] = msb;
+
           break;
       }
       break;
