@@ -33,6 +33,8 @@ class Chip8 {
   uint8_t display[SCREEN_WIDTH * SCREEN_HEIGHT];
   bool drawFlag;
   uint8_t msb;
+  uint16_t byte_result;
+  uint16_t flag_result;
 
   void load_rom(const char *filename);
   void cycle();

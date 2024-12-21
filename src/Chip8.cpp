@@ -152,24 +152,25 @@ void Chip8::cycle() {
           break;
 
         case 0x4:  // ADD: Set VX = VX + VY and set VF = carry (0x8XY4)
-          V[X] += V[Y];
+          byte_result = V[X] + V[Y];
 
-          if (V[X] >= 256u) {
-            V[0xF] = 1;  // carry flag
+          V[X] = byte_result;
+
+          if (byte_result > 0xFF) {
+            V[0xF] = 1;
           } else {
             V[0xF] = 0;
           }
-          V[X] = (V[Y] + V[X]) & 0xFF;
+
           break;
 
         case 0x5:
-          if (V[X] > V[Y]) {
-            V[0xF] = 1;  // set to NOT borrow
-          } else {
-            V[0xF] = 0;
-          }
+          flag_result = (V[X] >= V[Y]) ? 1 : 0;
+          byte_result = V[X] - V[Y];
 
-          V[X] -= V[Y];
+          V[X] = byte_result;
+
+          V[0xF] = flag_result;
           break;
 
         case 0x6:
@@ -180,7 +181,9 @@ void Chip8::cycle() {
           break;
 
         case 0x7:
-          V[X] = V[Y] - V[X];
+          byte_result = V[Y] - V[X];
+
+          V[X] = byte_result;
 
           if (V[Y] >= V[X]) {
             V[0xF] = 1;  // set to NOT borrow
